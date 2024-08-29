@@ -1,0 +1,62 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{151EE977-A2DE-4D78-B56D-9EF65257BA1F}|TestMASM.vcxproj|C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\proyectoARChess.asm||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{151EE977-A2DE-4D78-B56D-9EF65257BA1F}|TestMASM.vcxproj|solutionrelative:proyectoARChess.asm||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Microsoft\\VC\\v170\\BuildCustomizations\\masm.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 65,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            }
+          ]
+        },
+        {
+          "DockedHeight": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "masm.targets",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Microsoft\\VC\\v170\\BuildCustomizations\\masm.targets",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Microsoft\\VC\\v170\\BuildCustomizations\\masm.targets",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Microsoft\\VC\\v170\\BuildCustomizations\\masm.targets",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Microsoft\\VC\\v170\\BuildCustomizations\\masm.targets",
+              "ViewState": "AQIAADAAAAAAAAAAAAAWwEUAAAAEAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
+              "WhenOpened": "2024-08-23T00:09:53.767Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "proyectoARChess.asm",
+              "DocumentMoniker": "C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\proyectoARChess.asm",
+              "RelativeDocumentMoniker": "proyectoARChess.asm",
+              "ToolTip": "C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\proyectoARChess.asm",
+              "RelativeToolTip": "proyectoARChess.asm",
+              "ViewState": "AQIAABwBAAAAAAAAAAAAwDQBAAAVAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-08-21T02:11:13.14Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
