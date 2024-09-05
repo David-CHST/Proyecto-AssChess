@@ -7,15 +7,21 @@ include Macros.inc
 .data
 	; ##########################
 	; Códigos ASCII de cada pieza
+
+	; NEGRO | BLANCO
+
+
+	;  N   B     N  B
 	; 7Bh 7Dh |  {  }    Knight
 	; 5Bh 5Dh |  [  ]    Tower
 	; 28h 29h |  (  )    Bishop
+	
+	;  N    B     N  B
+	; 2Bh 2Ah  |  +  *  King
+	; 26h 24h  |  &  $ Queen
+	; 3Ch 3Eh  |  <  >  Pawn
 
-	; 20h Espacio Vacio // ALT 22h o 27h o 3Ah
-
-	; 2Bh 2Ah  |  + *  King
-	; 26h 24h  |  & $ Queen
-	; 3Ch 3Eh  |  < >  Pawn
+	; 20h Espacio Vacio 
 
 	; ##########################
 
@@ -57,16 +63,37 @@ include Macros.inc
 	MovidaY SDWORD 0
 	DiferenciaX SDWORD 0
 	DiferenciaY SDWORD 0
-	DiferenciaAbsX SDWORD 0 ; Se usan variables sin signo para valores absolutos
+	DiferenciaAbsX DWORD 0 ; Se usan variables sin signo para valores absolutos
 	DiferenciaAbsY DWORD 0 ; Se usan variables sin signo para valores absolutos
-	PiezaMovida SDWORD 0
-	PiezaAtacada SDWORD 0
+	PiezaMovida BYTE 0, 0
+	PiezaAtacada BYTE 0, 0
 
+	; ### MENSAJES AL JUGADOR
+
+	PreSeleccion BYTE "Ingrese la casilla de la pieza que desea mover (Columna Letra y luego Fila Numero) ", 0
+	PBSeleccionado BYTE "Se ha elegido un Peon Blanco... Ingrese el movimiento que desea: ", 0
+	TBSeleccionado BYTE "Se ha elegido una Torre Blanca... Ingrese el movimiento que desea: ", 0
+	ABSeleccionado BYTE "Se ha elegido un Alfil Blanco... Ingrese el movimiento que desea: ", 0
+	KBSeleccionado BYTE "Se ha elegido un Rey Blanco... Ingrese el movimiento que desea: ", 0
+	RBSeleccionado BYTE "Se ha elegido una Reina Blanca... Ingrese el movimiento que desea: ", 0
+	CBSeleccionado BYTE "Se ha elegido un Caballo Blanco... Ingrese el movimiento que desea: ", 0
+	PNSeleccionado BYTE "Se ha elegido un Peon Negro... Ingrese el movimiento que desea: ", 0
+	TNSeleccionado BYTE "Se ha elegido una Torre Negra... Ingrese el movimiento que desea: ", 0
+	ANSeleccionado BYTE "Se ha elegido un Alfil Negro... Ingrese el movimiento que desea: ", 0
+	KNSeleccionado BYTE "Se ha elegido un Rey Negro... Ingrese el movimiento que desea: ", 0
+	RNSeleccionado BYTE "Se ha elegido una Reina Negra... Ingrese el movimiento que desea: ", 0
+	CNSeleccionado BYTE "Se ha elegido un Caballo Negro... Ingrese el movimiento que desea: ", 0
+	NULLSELECCIONADO BYTE "Se ha elegido una ficha invalida... Presione cualquier tecla para volver...", 0
+	
+	
 	; ### DEBUG
 	msg1 BYTE "-num-", 0
 	msg2 BYTE "-minuscula-", 0
 	msg3 BYTE "-saliendo-", 0
 	msg4 BYTE "-valido-", 0
+	msgDebug BYTE "HERE", 0
+	msgDebog BYTE " bug black", 0
+	msgDeboog BYTE " bug white", 0
 
 	; ##########################
 
@@ -115,6 +142,12 @@ limpiarVariables ENDP
 
 recibirPieza PROC
 	cicloInputLetra:
+		call CRLF
+		call CRLF
+		lea edx, PreSeleccion
+		call WriteString
+		call CRLF
+		xor edx, edx
 		call ReadChar
 		call WriteChar
 		xor ah, ah
@@ -128,6 +161,7 @@ recibirPieza PROC
 	verMinuscula:
 		mov edx, offset msg2
 		call writestring
+		xor ah, ah
 		cmp al, 61h
 		jl salir
 		cmp al, 68h
@@ -152,17 +186,22 @@ recibirPieza PROC
 		call writestring
 		mov PiezaExisteEnTablero, 1
 	salir:
-		mov edx, offset msg3
-		call writestring
 	ret
 recibirPieza ENDP
 
 recibirMovimiento PROC
 	cicloInputLetra:
+		call CRLF
+		call CRLF
+		lea edx, PreSeleccion
+		call WriteString
+		call CRLF
+		xor edx, edx
 		call ReadChar
 		call WriteChar
+		xor ah, ah
 		cmp al, 41h
-		jl salir
+		jl salir ; JUMP IF LESS
 		cmp al, 48h
 		jg verMinuscula
 		sub al, 41h
@@ -171,17 +210,19 @@ recibirMovimiento PROC
 	verMinuscula:
 		mov edx, offset msg2
 		call writestring
+		xor ah, ah
 		cmp al, 61h
 		jl salir
 		cmp al, 68h
 		jg salir
 		sub al, 61h
-		mov MovidaX, eax
+		mov PiezaX, eax
 		jmp cicloInputNum
 	cicloInputNum:
 		call limpiarRegistros
 		call ReadChar
 		call WriteChar
+		xor ah, ah
 		cmp al, 31h
 		jl salir
 		cmp al, 38h
@@ -204,19 +245,28 @@ recibirMovimiento ENDP
 obtenerDiferenciaIndices PROC
 	call limpiarRegistros
 	mov ebx, MovidaX
-	mov DiferenciaX, ebx
+	mov DiferenciaX, ebx ; se guarda el valor de MovidaX en DiferenciaX
 	mov edx, PiezaX
-	sub DiferenciaX, edx
+	sub DiferenciaX, edx ; se le resta el movimiento en X
+	; Ahora se calcula el valor absoluto de diferencia X
 	call limpiarRegistros
+	mov eax, DiferenciaX
+	test eax, eax ; Prueba de Negatividad
+	jns sinCambioX ; en caso de ser positivo no requiere cambio
+	neg eax ; en caso de ser negativo se niega el valor para ser positivo
+	sinCambioX:
+	mov DiferenciaAbsX, eax ; se guarda el absoluto en variable
 	mov ebx, MovidaY
-	mov DiferenciaY, ebx
-	mov edx, PiezaX
-	sub DiferenciaX, edx
+	mov DiferenciaY, ebx ; se guarda el valor de MovidaY en DiferenciaY
+	mov edx, PiezaY
+	sub DiferenciaY, edx ; se le resta el movimiento en Y
 	call limpiarRegistros
-	mov ebx, DiferenciaX
-	mov edx, DiferenciaY
-	mov DiferenciaAbsX, ebx
-	mov DiferenciaAbsY, edx
+	mov eax, DiferenciaY
+	test eax, eax ; Prueba de Negatividad
+	jns sinCambioY ; en caso de ser positivo no requiere cambio
+	neg eax ; en caso de ser negativo se niega el valor para ser positivo
+	sinCambioY:
+	mov DiferenciaAbsY, eax ; se guarda el absoluto en variable
 	ret
 obtenerDiferenciaIndices ENDP
 
@@ -276,20 +326,22 @@ validarMovimientoTower PROC
 	ret
 validarMovimientoTower ENDP
 
-; Pawn Blanca: Diferencia de indices positivo, solo 1 en eje Y excepto cuando hay oponente ahi, en ese caso permite bishop de 1 diferencia con Y en positivo
+; Pawn Blanca: Diferencia de indices positivo, solo 1 en eje Y excepto cuando hay oponente ahi, en ese caso permite bishop de 1 diferencia de índices
 validarMovimientoPawnBlanca PROC
 	ret
 validarMovimientoPawnBlanca ENDP
 
-; 3Ch | Pawn Negra: Diferencia de indices negativo, solo 1 en eje Y excepto cuando hay oponente ahi, en ese caso permite bishop de 1 diferencia con Y en negativo
+; Pawn Negra: Diferencia de indices negativo, solo 1 en eje Y excepto cuando hay oponente ahi, en ese caso permite bishop de 1 diferencia de índices
 validarMovimientoPawnNegra PROC
 	ret
 validarMovimientoPawnNegra ENDP
 
+; Atravesar uno a uno el camino de los índices, revisando que no existan piezas en medio.
 validarCaminoPieza PROC
 	ret
 validarCaminoPieza ENDP
 
+; Verificar que la pieza destino está vacía o es enemiga
 validarDestinoKnight PROC
 	ret
 validarDestinoKnight ENDP
@@ -304,7 +356,6 @@ obtenerTipoPieza PROC
 	add eax, PiezaX
 	add esi, eax
 	mov al, [esi]
-	call writechar
 	ret
 obtenerTipoPieza ENDP
 
@@ -379,19 +430,24 @@ printTablero PROC
 		ret
 printTablero ENDP
 
+realizarMovimiento PROC
+	ret
+realizarMovimiento ENDP
 ; ============================== ;
 ; INICIO DEL CÓDIGO EN EJECUCIÓN ;
 ; ============================== ;
 
 main PROC
+	; antes de iniciar el turno falta un menu para iniciar un juego y seleccionar el color del jugador en este dispositivo
 	cicloTurno:
 			call limpiarVariables
 			call limpiarRegistros
 			call clrscr ; limpia la pantallita
 			call printTablero
-			call recibirPieza
+			call recibirPieza ; recibe la pieza que se desea mover
 			cmp PiezaExisteEnTablero, 0
 			je cicloTurno
+			call crlf ; Salto de línea
 			call crlf ; Salto de línea
 			cmp ColorJugador, 1
 			je validarBlanca
@@ -399,55 +455,235 @@ main PROC
 			validarBlanca:
 				call limpiarRegistros
 				call obtenerTipoPieza
-				call obtenerDiferenciaIndices
-				cmp PiezaMovida, 3Eh ; | Pawn
-				call validarMovimientoPawnBlanca
-				call validarCaminoPieza
-				jne towerBlanca
+				mov PiezaMovida, al
+				pawnBlanca:
+					lea edx, PiezaMovida
+					call writeString
+					lea edx, msgDeboog
+					call writeString
+					cmp PiezaMovida, 3Ch  ; | Pawn
+					jne towerBlanca
+					call limpiarRegistros
+					lea edx, PBSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					call validarMovimientoPawnBlanca
+					call validarCaminoPieza
+					jmp salirTurno ; termina el turno
 				towerBlanca:
-					cmp PiezaMovida, 5Dh ; | Tower
-					jne bishopBlanca
-				bishopBlanca:
-					cmp PiezaMovida, 29h ; | Bishop
-					jne kingBlanca
-				kingBlanca:
-					cmp PiezaMovida, 2Ah ; | King
-					jne queenBlanca
-				queenBlanca:
-					cmp PiezaMovida, 24h ; | Queen
-					jne knightBlanca
-				knightBlanca:
-					cmp PiezaMovida, 7Dh ; | Knight 
-					jne piezaInvalida
-			validarNegra:
-				call obtenerTipoPieza
-				call obtenerDiferenciaIndices
-				cmp PiezaMovida, 3Ch ; | Pawn
-				call validarMovimientoPawnNegra
-				call validarCaminoPieza
-				jne towerNegra
-				towerNegra:
+					lea edx, msgDeboog
+					call writeString
 					cmp PiezaMovida, 5Bh ; | Tower
-					jne bishopNegra
-				bishopNegra:
+					jne bishopBlanca
+					call limpiarRegistros
+					lea edx, TBSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					call validarCaminoPieza
+					; realizar movimiento
+					jmp salirTurno ; termina el turno
+				bishopBlanca:
 					cmp PiezaMovida, 28h ; | Bishop
-					jne kingNegra
-				kingNegra:
-					cmp PiezaMovida, 2Bh ; | King
-					jne queenNegra
-				queenNegra:
+					jne kingBlanca
+					call limpiarRegistros
+					lea edx, ABSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					call validarCaminoPieza
+					; realizar movimiento
+					jmp salirTurno ; termina el turno
+				kingBlanca:
+					cmp PiezaMovida, 2Bh  ; | King
+					jne queenBlanca
+					call limpiarRegistros
+					lea edx, KBSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					call validarCaminoPieza
+					; realizar movimiento
+					jmp salirTurno ; termina el turno
+				queenBlanca:
 					cmp PiezaMovida, 26h ; | Queen
-					jne knightNegra
-				knightNegra:
+					jne knightBlanca
+					call limpiarRegistros
+					lea edx, RBSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					call validarCaminoPieza
+					; realizar movimiento
+					jmp salirTurno ; termina el turno
+				knightBlanca:
 					cmp PiezaMovida, 7Bh ; | Knight 
 					jne piezaInvalida
+					call limpiarRegistros
+					lea edx, CBSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					; realizar movimiento
+					jmp salirTurno ; termina el turno
+			validarNegra:
+				call limpiarRegistros
+				call obtenerTipoPieza
+				mov PiezaMovida, al
+				pawnNegra:
+					lea edx, PiezaMovida
+					call writeString
+					cmp PiezaMovida, 3Eh ; | Pawn
+					jne towerNegra
+					call limpiarRegistros
+					lea edx, PNSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					mov eax, DiferenciaAbsX
+					add al, 30h
+					xor ah, ah
+					call writechar
+					mov eax, DiferenciaAbsY
+					add al, 30h
+					xor ah, ah
+					call writechar
+					call readchar
+					call validarMovimientoPawnNegra
+					call validarCaminoPieza
+					jmp salirTurno ; termina el turno
+				towerNegra:
+					cmp PiezaMovida, 5Dh ; | Tower
+					jne bishopNegra
+					call limpiarRegistros
+					lea edx, TNSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					call validarCaminoPieza
+					jmp salirTurno ; termina el turno
+				bishopNegra:
+					cmp PiezaMovida, 29h ; | Bishop
+					jne kingNegra
+					call limpiarRegistros
+					lea edx, ANSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					call validarCaminoPieza
+					jmp salirTurno ; termina el turno
+				kingNegra:
+					cmp PiezaMovida, 2Ah ; | King
+					jne queenNegra
+					call limpiarRegistros
+					lea edx, KNSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					call validarCaminoPieza
+					jmp salirTurno ; termina el turno
+				queenNegra:
+					cmp PiezaMovida, 24h ; | Queen
+					jne knightNegra
+					call limpiarRegistros
+					lea edx, RNSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					call validarCaminoPieza
+					jmp salirTurno ; termina el turno
+				knightNegra:
+					cmp PiezaMovida, 7Dh ; | Knight 
+					jne piezaInvalida
+					call limpiarRegistros
+					lea edx, CNSeleccionado
+					call WriteString
+					call CRLF
+					call recibirMovimiento
+					call obtenerDiferenciaIndices
+					lea edx, DiferenciaAbsX
+					call writeString
+					lea ebx, DiferenciaAbsY
+					call writeString
+					call readchar
+					jmp salirTurno ; termina el turno
 			piezaInvalida:
 				;desplegar mensaje
+				mov PiezaExisteEnTablero, 0
+				mov MovidaExisteEnTablero, 0
+				call readChar
 				jmp cicloTurno
 			movimientoInvalido:
 				;desplegar mensaje
+				mov PiezaExisteEnTablero, 0
+				mov MovidaExisteEnTablero, 0
+				call readChar
 				jmp cicloTurno
 			salirTurno:
+				mov PiezaExisteEnTablero, 0
+				mov MovidaExisteEnTablero, 0
 				;desplegar mensaje 
 	
 	salir:
