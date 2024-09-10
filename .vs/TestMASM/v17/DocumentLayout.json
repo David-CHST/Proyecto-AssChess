@@ -3,12 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:1:0:{151EE977-A2DE-4D78-B56D-9EF65257BA1F}|TestMASM.vcxproj|C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\proyectoARChess.asm||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:1:0:{151EE977-A2DE-4D78-B56D-9EF65257BA1F}|TestMASM.vcxproj|solutionrelative:proyectoARChess.asm||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:2:0:{151EE977-A2DE-4D78-B56D-9EF65257BA1F}|TestMASM.vcxproj|C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\proyectoARChess.asm||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:2:0:{151EE977-A2DE-4D78-B56D-9EF65257BA1F}|TestMASM.vcxproj|solutionrelative:proyectoARChess.asm||{8B382828-6202-11D1-8870-0000F87579D2}"
+      "AbsoluteMoniker": "D:0:0:{151EE977-A2DE-4D78-B56D-9EF65257BA1F}|TestMASM.vcxproj|C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\proyectoARChess.asm||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{151EE977-A2DE-4D78-B56D-9EF65257BA1F}|TestMASM.vcxproj|solutionrelative:proyectoARChess.asm||{8B382828-6202-11D1-8870-0000F87579D2}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,43 +34,9 @@
               "RelativeDocumentMoniker": "proyectoARChess.asm",
               "ToolTip": "C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\proyectoARChess.asm",
               "RelativeToolTip": "proyectoARChess.asm",
-              "ViewState": "AQIAAI8BAAAAAAAAAAAcwJoBAAANAAAA",
+              "ViewState": "AQIAACQDAAAAAAAAAAAAAPkDAAAIAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
               "WhenOpened": "2024-08-29T23:51:48.704Z",
-              "EditorCaption": ""
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "Orientation": 0,
-      "VerticalTabListWidth": 256,
-      "FloatingWindowState": {
-        "Id": "ece2f6fc-8331-46c6-849e-3a06ae6c1379",
-        "Display": 2,
-        "X": 298,
-        "Y": 240,
-        "Width": 1553,
-        "Height": 990,
-        "WindowState": 2
-      },
-      "DocumentGroups": [
-        {
-          "DockedWidth": 200,
-          "SelectedChildIndex": 0,
-          "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "proyectoARChess.asm",
-              "DocumentMoniker": "C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\proyectoARChess.asm",
-              "RelativeDocumentMoniker": "proyectoARChess.asm",
-              "ToolTip": "C:\\Users\\David\\OneDrive - Estudiantes ITCR\\Docs Universidad\\II - Arquitectura de Computadores\\Semana 4\\TestMASM\\proyectoARChess.asm",
-              "RelativeToolTip": "proyectoARChess.asm",
-              "ViewState": "AQIAAOIAAAAAAAAAAIAwwA0BAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2024-09-04T22:55:54.833Z",
               "EditorCaption": ""
             }
           ]
