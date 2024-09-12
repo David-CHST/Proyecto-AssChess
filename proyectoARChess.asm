@@ -115,7 +115,12 @@ include Macros.inc
 
 ; main PROC // contiene el codigo principal que se ejecuta
 ; leerUsuarioJugando PROC // Lee un usuario y una contraseña, inicio y carga de partida y selecciona color del jugador
-; recibirPieza PROC // Recibe y guarda variables de pieza de inicio y el movimiento deseado, seg�n los datos define si MovidaExisteEnTablero
+; crearArchivoJuego PROC // Comunica al script de servicio que se debe crear un archivo para sincronizar la partida
+; recibirArchivoJuego PROC // Comunica al script de servicio que se debe recibir un archivo de la nube
+; simularCargaJuego PROC // Recibe un archivo de juego y carga hasta el movimiento más reciente
+; comunicarCambioArchivo PROC // Comunica al script de servicio el movimiento que acaba de suceder
+; recibirCambioArchivo PROC // Se mantiene a la espera de un cambio en el archivo del cual se encarga el script de servicio
+; recibirPieza PROC // Recibe y guarda variables de pieza de inicio y el movimiento deseado, segun los datos define si MovidaExisteEnTablero
 ; limpiarRegistros PROC // Limpia todos los registros en uso
 ; realizarMovimiento PROC // Convierte el espacio anterior en vacio y el actual en la pieza seleccionada
 ; validarMovimiento<TIPOPIEZA> PROC // Multiples procedimientos encargados de validar las reglas especificas seg�n el tipo de pieza del macro
@@ -678,6 +683,31 @@ validarCaminoPieza PROC
 	ret
 validarCaminoPieza ENDP
 
+crearArchivoJuego PROC
+	; Comunica al script de servicio que se debe crear un archivo para sincronizar la partida
+	ret
+crearArchivoJuego ENDP
+
+recibirArchivoJuego PROC
+	; Comunica al script de servicio que se debe recibir un archivo de la nube
+	ret
+recibirArchivoJuego ENDP
+
+simularCargaJuego PROC
+	; Recibe un archivo de juego y carga hasta el movimiento más reciente
+	ret
+simularCargaJuego ENDP
+
+comunicarCambioArchivo PROC
+	; Comunica al script de servicio el movimiento que acaba de suceder
+	ret
+comunicarCambioArchivo ENDP
+
+recibirCambioArchivo PROC
+	; Se mantiene a la espera de un cambio en el archivo del cual se encarga el script de servicio
+	ret
+recibirCambioArchivo ENDP
+
 leerUsuarioJugando PROC
 	call limpiarRegistros
 	mov si, 0
@@ -716,25 +746,10 @@ leerUsuarioJugando PROC
 		xor eax, eax
 		call readChar
 		cmp al, 13 ; comparar si es enter
-		je tipoInicio 
+		je colorJugador
 		lea usrOponent[si], al
 		inc si
 		jmp cicloIngresoOpp
-	tipoInicio:
-		call clrscr
-		lea eax, TipoJuego
-		call WriteString
-		xor eax, eax
-		call readChar
-		cmp al, 30h
-		je nuevaPartida
-		cmp al 31h
-		je cargarPartida
-		jmp tipoInicio
-	nuevaPartida:
-		; procesamiento de nuevo archivo // Jug 1 sube archivo, Jug 2 recibe de nube 
-	cargarPartida:
-		; procesamiento preparativo de leer partida
 	colorJugador:
 		call clrscr
 		lea eax, EscogerColor
@@ -748,10 +763,25 @@ leerUsuarioJugando PROC
 		jmp colorJugador
 	empiezaBlancas:
 		mov colorJugador, 0
-		jmp salir
+		jmp tipoJuego
 	empiezaNegras:
 		mov colorJugador, 1
-		jmp salir
+		jmp tipoJuego
+	tipoInicio:
+		call clrscr
+		lea eax, TipoJuego
+		call WriteString
+		xor eax, eax
+		call readChar
+		cmp al, 30h
+		je nuevaPartida
+		cmp al 31h
+		je cargarPartida
+		jmp tipoInicio
+	nuevaPartida:
+		; procesamiento de nuevo archivo // Jug 1 crea y sube archivo, Jug 2 recibe de nube 
+	cargarPartida:
+		; procesamiento preparativo de leer partida
 	salir:
 	ret
 leerUsuarioJugando ENDP
