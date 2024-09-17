@@ -35,8 +35,8 @@ include Macros.inc
 	; 5Bh y 5Dh | Tower: Mismo indice en X o Y // Diferencia de indices 0 en alguno de los dos ejes.
 	
 	; Recordar que los indices son negativos si la pieza se hace mas para arriba
-	; 3Eh | Pawn Negra: Diferencia de indices positivo, solo 1 en eje Y excepto cuando hay oponente ahi, en ese caso permite bishop de 1 diferencia con Y en positivo
-	; 3Ch | Pawn Blanca: Diferencia de indices negativo, solo 1 en eje Y excepto cuando hay oponente ahi, en ese caso permite bishop de 1 diferencia con Y en negativo
+	; 3Eh | Pawn Negra: Diferencia de indices positivo, solo 1 en eje Y excepto cuando hay opponente ahi, en ese caso permite bishop de 1 diferencia con Y en positivo
+	; 3Ch | Pawn Blanca: Diferencia de indices negativo, solo 1 en eje Y excepto cuando hay opponente ahi, en ese caso permite bishop de 1 diferencia con Y en negativo
 
 	; - Generalidades -
 	; Superior Izquierda 5Bh = indice [0,0] = A1
@@ -46,18 +46,19 @@ include Macros.inc
 
 	; ##########################
 
-	Tablero BYTE 5Bh, 28h, 7Bh, 26h, 2Bh, 7Bh, 28h, 5Bh,  0
+	Tablero BYTE 5Bh, 7Bh, 28h, 26h, 2Bh, 28h, 7Bh, 5Bh,  0
 	        BYTE 3Ch, 3Ch, 3Ch, 3Ch, 3Ch, 3Ch, 3Ch, 3Ch,  0
 	        BYTE 20h, 20h, 20h, 20h, 20h, 20h, 20h, 20h,  0
             BYTE 20h, 20h, 20h, 20h, 20h, 20h, 20h, 20h,  0
 		    BYTE 20h, 20h, 20h, 20h, 20h, 20h, 20h, 20h,  0
 		    BYTE 20h, 20h, 20h, 20h, 20h, 20h, 20h, 20h,  0
 		    BYTE 3Eh, 3Eh, 3Eh, 3Eh, 3Eh, 3Eh, 3Eh, 3Eh,  0
-		    BYTE 5Dh, 29h, 7Dh, 24h, 2Ah, 7Dh, 29h, 5Dh,  0
+		    BYTE 5Dh, 7Dh, 29h, 24h, 2Ah, 29h, 7Dh, 5Dh,  0
 
 	; ##########################
 
-	ColorJugador SDWORD 1
+	ColorJugador SDWORD 0 ; usado para definir el color del jugador cuyo turno es en este momento
+	ColorOponente SDWORD 1 ; usado para definir el color del oponente en todo momento
 	MovidaExisteEnTablero SDWORD 0
 	PiezaExisteEnTablero SDWORD 0
 	MovidaEsPosible SDWORD 0
@@ -72,35 +73,103 @@ include Macros.inc
 	PiezaMovida BYTE 0
 	PiezaAtacada BYTE 0
 	PiezaPuedeComer BYTE 1
+	jaqueMate BYTE 0
+	colorEliminado BYTE 2
+	tipoTablero BYTE 0
 
 	; Variables para Ingreso del Jugador
-	usrCurrent BYTE 20 DUP(0) 
-	usrPassword BYTE 20 DUP(0)
-	usrOponent BYTE 20 DUP(0)
+	usrCurrent BYTE 20 DUP(0), 0
+	usrPassword BYTE 20 DUP(0), 0
+	usrOpponent BYTE 20 DUP(0), 0
+
+	; Variables para creacion de archivos
+	nombreArchivo BYTE "asmCustomAPI.txt", 0
+	longitudBuffer SDWORD 512
+	identificadorArchivo SDWORD 0
+	contenidoArchivo BYTE 512 DUP(0), 0 ; se crea un buffer para el contenido del archivo 
+	tiempoEspera DWORD 1500
+
 
 
 	; ### MENSAJES AL JUGADOR
-	DigitarUsuario BYTE "Ingrese el usuario con el que desea iniciar la sesion: ", 0
-	DigitarContra BYTE "Ingrese la contraseña de su usuario para utilizarlo: ", 0
-	DigitarOpp BYTE "Ingrese el nombre de usuario de su oponente para vincular las partidas: ", 0
-	TipoJuego BYTE "Ingrese 0 si desea vincular una nueva partida // Ingrese 1 si desea cargar partida: ", 0
-	EscogerColor BYTE "Ingrese el color con el que comienza en esta partida (0 Blancas / 1 Negras): ", 0
+	DigitarUsuario BYTE    13, 10, 13, 10      
+				BYTE    '            +---------------------------------------------------------+', 13, 10
+				BYTE    '            |                                                         |', 13, 10
+				BYTE    '            |            Ingrese el usuario con el que desea          |', 13, 10
+				BYTE    '            |            iniciar la sesion:                           |', 13, 10
+				BYTE    '            |                                                         |', 13, 10
+				BYTE    '            +---------------------------------------------------------+', 13, 10
+				BYTE    '            > ', 0  ; Null terminator
+	DigitarContra    BYTE    13, 10, 13, 10      
+                BYTE    '            +---------------------------------------------------------+', 13, 10
+                BYTE    '            |                                                         |', 13, 10
+                BYTE    '            |            Ingrese la clave de su usuario para           |', 13, 10
+                BYTE    '            |            utilizarlo:                                  |', 13, 10
+                BYTE    '            |                                                         |', 13, 10
+                BYTE    '            +---------------------------------------------------------+', 13, 10
+                BYTE    '            > ', 0  ; Null terminator
+	DigitarOpp       BYTE    13, 10, 13, 10      
+                BYTE    '            +---------------------------------------------------------+', 13, 10
+                BYTE    '            |                                                         |', 13, 10
+                BYTE    '            |            Ingrese el nombre de usuario de su           |', 13, 10
+                BYTE    '            |            oponente para vincular las partidas:         |', 13, 10
+                BYTE    '            |                                                         |', 13, 10
+                BYTE    '            +---------------------------------------------------------+', 13, 10
+                BYTE    '            > ', 0  ; Null terminator
+	TipoJuego        BYTE    13, 10, 13, 10      
+                BYTE    '            +---------------------------------------------------------+', 13, 10
+                BYTE    '            |                                                         |', 13, 10
+                BYTE    '            |            Ingrese 0 si desea vincular una              |', 13, 10
+                BYTE    '            |            nueva partida                                |', 13, 10
+                BYTE    '            |            Ingrese 1 si desea cargar partida:           |', 13, 10
+                BYTE    '            |                                                         |', 13, 10
+                BYTE    '            +---------------------------------------------------------+', 13, 10
+                BYTE    '            > ', 0  ; Null terminator
+	EscogerColor     BYTE    13, 10, 13, 10      
+                BYTE    '            +---------------------------------------------------------+', 13, 10
+                BYTE    '            |                                                         |', 13, 10
+                BYTE    '            |            Ingrese el color con el que comienza         |', 13, 10
+                BYTE    '            |            en esta partida (0 Blancas / 1 Negras):      |', 13, 10
+                BYTE    '            |                                                         |', 13, 10
+                BYTE    '            +---------------------------------------------------------+', 13, 10
+                BYTE    '            > ', 0  ; Null terminator
 	PreSeleccion BYTE "Ingrese la casilla de la pieza que desea mover (Columna Letra y luego Fila Numero): ", 0
 	PostSeleccion BYTE "Ingrese la casilla a la que se desea mover (Columna Letra y luego Fila Numero): ", 0
-	PBSeleccionado BYTE "Se ha elegido un Peon Blanco... Ingrese el movimiento que desea: ", 0
-	TBSeleccionado BYTE "Se ha elegido una Torre Blanca... Ingrese el movimiento que desea: ", 0
-	ABSeleccionado BYTE "Se ha elegido un Alfil Blanco... Ingrese el movimiento que desea: ", 0
-	KBSeleccionado BYTE "Se ha elegido un Rey Blanco... Ingrese el movimiento que desea: ", 0
-	RBSeleccionado BYTE "Se ha elegido una Reina Blanca... Ingrese el movimiento que desea: ", 0
-	CBSeleccionado BYTE "Se ha elegido un Caballo Blanco... Ingrese el movimiento que desea: ", 0
-	PNSeleccionado BYTE "Se ha elegido un Peon Negro... Ingrese el movimiento que desea: ", 0
-	TNSeleccionado BYTE "Se ha elegido una Torre Negra... Ingrese el movimiento que desea: ", 0
-	ANSeleccionado BYTE "Se ha elegido un Alfil Negro... Ingrese el movimiento que desea: ", 0
-	KNSeleccionado BYTE "Se ha elegido un Rey Negro... Ingrese el movimiento que desea: ", 0
-	RNSeleccionado BYTE "Se ha elegido una Reina Negra... Ingrese el movimiento que desea: ", 0
-	CNSeleccionado BYTE "Se ha elegido un Caballo Negro... Ingrese el movimiento que desea: ", 0
+	PBSeleccionado BYTE ">  Se ha elegido un Peon Blanco... Ingrese el movimiento que desea: ", 0
+	TBSeleccionado BYTE ">  Se ha elegido una Torre Blanca... Ingrese el movimiento que desea: ", 0
+	ABSeleccionado BYTE ">  Se ha elegido un Alfil Blanco... Ingrese el movimiento que desea: ", 0
+	KBSeleccionado BYTE ">  Se ha elegido un Rey Blanco... Ingrese el movimiento que desea: ", 0
+	RBSeleccionado BYTE ">  Se ha elegido una Reina Blanca... Ingrese el movimiento que desea: ", 0
+	CBSeleccionado BYTE ">  Se ha elegido un Caballo Blanco... Ingrese el movimiento que desea: ", 0
+	PNSeleccionado BYTE ">  Se ha elegido un Peon Negro... Ingrese el movimiento que desea: ", 0
+	TNSeleccionado BYTE ">  Se ha elegido una Torre Negra... Ingrese el movimiento que desea: ", 0
+	ANSeleccionado BYTE ">  Se ha elegido un Alfil Negro... Ingrese el movimiento que desea: ", 0
+	KNSeleccionado BYTE ">  Se ha elegido un Rey Negro... Ingrese el movimiento que desea: ", 0
+	RNSeleccionado BYTE ">  Se ha elegido una Reina Negra... Ingrese el movimiento que desea: ", 0
+	CNSeleccionado BYTE ">  Se ha elegido un Caballo Negro... Ingrese el movimiento que desea: ", 0
+	NULLMOVIDO BYTE "Se ha elegido un movimiento invalido... Presione cualquier tecla para volver...", 0
 	NULLSELECCIONADO BYTE "Se ha elegido una ficha invalida... Presione cualquier tecla para volver...", 0
-
+    EsperandoSubida BYTE "Esperando a recibir confirmacion de subida de archivo...", 0
+    EsperandoRespuesta BYTE "Esperando respuesta del oponente...", 0
+	menuMessage    BYTE    13, 10, 13, 10      
+                  BYTE    '            +---------------------------------------------------------+', 13, 10
+                  BYTE    '            |                                                         |', 13, 10
+                  BYTE    '            |                        AsmChess                         |', 13, 10
+                  BYTE    '            |                                                         |', 13, 10
+                  BYTE    '            |     Elaborado por:                                      |', 13, 10
+                  BYTE    '            |             David Molina                                |', 13, 10
+                  BYTE    '            |             Mariano Elizondo                            |', 13, 10
+                  BYTE    '            |                                                         |', 13, 10
+                  BYTE    '            |                                                         |', 13, 10
+                  BYTE    '            |  +-----------------------------------------------+      |', 13, 10
+                  BYTE    '            |  |  1. Modo Tradicional                          |      |', 13, 10
+                  BYTE    '            |  |                                               |      |', 13, 10
+                  BYTE    '            |  |  2. Modo Compacto                             |      |', 13, 10
+                  BYTE    '            |  +-----------------------------------------------+      |', 13, 10
+                  BYTE    '            |                                                         |', 13, 10
+                  BYTE    '            |                                                         |', 13, 10
+                  BYTE    '            +---------------------------------------------------------+', 13, 10
+                  BYTE    '            > Digite la opcion deseada: ', 0  ; Null terminator
 	
 	; ### DEBUG
 	msgDebug BYTE "HERE", 0
@@ -116,10 +185,10 @@ include Macros.inc
 ; main PROC // contiene el codigo principal que se ejecuta
 ; leerUsuarioJugando PROC // Lee un usuario y una contraseña, inicio y carga de partida y selecciona color del jugador
 ; crearArchivoJuego PROC // Comunica al script de servicio que se debe crear un archivo para sincronizar la partida
-; recibirArchivoJuego PROC // Comunica al script de servicio que se debe recibir un archivo de la nube
+; leerArchivoJuego PROC // Comunica al script de servicio que se debe recibir un archivo de la nube
 ; simularCargaJuego PROC // Recibe un archivo de juego y carga hasta el movimiento más reciente
 ; comunicarCambioArchivo PROC // Comunica al script de servicio el movimiento que acaba de suceder
-; recibirCambioArchivo PROC // Se mantiene a la espera de un cambio en el archivo del cual se encarga el script de servicio
+; esperarCambioArchivo PROC // Se mantiene a la espera de un cambio en el archivo del cual se encarga el script de servicio
 ; recibirPieza PROC // Recibe y guarda variables de pieza de inicio y el movimiento deseado, segun los datos define si MovidaExisteEnTablero
 ; limpiarRegistros PROC // Limpia todos los registros en uso
 ; realizarMovimiento PROC // Convierte el espacio anterior en vacio y el actual en la pieza seleccionada
@@ -456,7 +525,7 @@ validarMovimientoKnight PROC
 validarMovimientoKnight ENDP
 	
 
-; Pawn Blanca: Diferencia de indices positivo, solo 1 en eje Y excepto cuando hay oponente ahi, en ese caso permite bishop de 1 diferencia de �ndices
+; Pawn Blanca: Diferencia de indices positivo, solo 1 en eje Y excepto cuando hay opponente ahi, en ese caso permite bishop de 1 diferencia de �ndices
 validarMovimientoPawnBlanca PROC
 	mov MovidaEsPosible, 0
 	cmp DiferenciaY, 0 ; verificar movimiento en Y positivo
@@ -487,7 +556,7 @@ validarMovimientoPawnBlanca PROC
 	ret
 validarMovimientoPawnBlanca ENDP
 
-; Pawn Negra: Diferencia de indices negativo, solo 1 en eje Y excepto cuando hay oponente ahi, en ese caso permite bishop de 1 diferencia de indices
+; Pawn Negra: Diferencia de indices negativo, solo 1 en eje Y excepto cuando hay opponente ahi, en ese caso permite bishop de 1 diferencia de indices
 validarMovimientoPawnNegra PROC
 	mov MovidaEsPosible, 0
 	cmp DiferenciaY, 0 ; verificar movimiento en Y negativo
@@ -683,103 +752,418 @@ validarCaminoPieza PROC
 	ret
 validarCaminoPieza ENDP
 
-crearArchivoJuego PROC
-	; Comunica al script de servicio que se debe crear un archivo para sincronizar la partida
-	ret
-crearArchivoJuego ENDP
+colocarStringRegistro PROC ; Toma la direccion en EDI y coloca en su lugar un string ubicado en ESI, terminado en 0
+	cicloEscritura:
+		mov al, 0
+		cmp [esi], al ; cuando se encuentra un 0, deja de ingresar datos
+		je salida
+		mov al, [esi] ; coloca el char actual del string en AL
+		mov [edi], al ; coloca el char actual del string en donde se necesita
+		inc edi ; se aumenta puntero de tanto el string destinatario como el receptor
+		inc esi
+		jmp cicloEscritura
+	salida:
+		xor esi, esi ; se limpia esi, pero permanece edi
+		ret
 
-recibirArchivoJuego PROC
-	; Comunica al script de servicio que se debe recibir un archivo de la nube
+colocarStringRegistro ENDP 
+
+crearArchivoJuego PROC
+	; Comunica al script de servicio que se debe crear un archivo para iniciar desde cero con las blancas
+
+	; recibir un movimiento y validarlo para las blancas
+	call procesarTurnoIndividual
+	call clrscr
+	call printTablero
+
+	lea edx, nombreArchivo
+	call createOutputFile ; Procedimiento de irvine para crear o sobrescribir un archivo
+	mov identificadorArchivo, eax ; La funcion anterior produce en eax un "file handle" que se almacena en esta variable identificador
+
+	; Colocamos en EDI la ubicacion del contenido del archivo, para agregarle los datos necesarios
+	lea edi, contenidoArchivo
+	mov al, 32h
+	mov [edi], al ; Colocar el numero 2 le indica al script que fue inicializado el archivo para una partida nueva
+	inc edi ; se mueve el puntero
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+	inc edi 
+
+	lea esi, usrCurrent
+	call colocarStringRegistro ; coloca los contenidos de string de ESI en donde se encuentre EDI
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+	inc edi 
+	lea esi, usrOpponent
+	call colocarStringRegistro
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+	inc edi
+
+	lea esi, PiezaX
+	mov al, [esi]
+	add al, 41h
+	mov [edi], al ; se coloca la X
+	inc edi
+	lea esi, PiezaY
+	mov al, [esi]
+	add al, 31h
+	mov [edi], al ; se coloca la Y
+	inc edi 
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+	inc edi
+
+	lea esi, MovidaX
+	mov al, [esi]
+	add al, 41h
+	mov [edi], al ; se coloca la X
+	inc edi
+	lea esi, MovidaY
+	mov al, [esi]
+	add al, 31h
+	mov [edi], al ; se coloca la Y
+	inc edi
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+
+	mov eax, identificadorArchivo ; se lee nuevamente el identificador del archivo
+	lea edx, contenidoArchivo ; se coloca la totalidad del contenido necesario para el archivo en una sola escritura
+	mov ecx, longitudBuffer ; se coloca la cantidad de bytes a escribir en el archivo
+	call WriteToFile ; esta funcion requiere eax, edx y ecx para funcionar, escribe los contenidos de edx en el archivo ubicado en eax
+	
+	mov eax, identificadorArchivo ; se lee nuevamente el identificador del archivo
+	call CloseFile ; se cierra la escritura al archivo
+
 	ret
-recibirArchivoJuego ENDP
+crearArchivoJuego ENDP ; NOTA: Al realizar el primer movimiento se envía
+
+recibirPartidaCreada PROC ; es el script encargado de solicitar sincronizacion con la nube
+	; inician blancas
+	mov colorJugador, 0
+	; desplegar tablero
+	call clrscr
+	call printTablero
+	; notificar al script de python que se espera recibir datos con el nombre de jugador y oponente (Inicia en 3)
+	lea edx, nombreArchivo
+	call createOutputFile ; Procedimiento de irvine para crear o sobrescribir un archivo
+	mov identificadorArchivo, eax ; La funcion anterior produce en eax un "file handle" que se almacena en esta variable identificador
+
+	; Colocamos en EDI la ubicacion del contenido del archivo, para agregarle los datos necesarios
+	lea edi, contenidoArchivo
+	mov al, 33h
+	mov [edi], al ; Colocar el numero 3
+	inc edi ; se mueve el puntero
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+	inc edi 
+
+	lea esi, usrCurrent
+	call colocarStringRegistro ; coloca los contenidos de string de ESI en donde se encuentre EDI
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+	inc edi 
+	lea esi, usrOpponent
+	call colocarStringRegistro
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+
+	mov eax, identificadorArchivo ; se lee nuevamente el identificador del archivo
+	lea edx, contenidoArchivo ; se coloca la totalidad del contenido necesario para el archivo en una sola escritura
+	mov ecx, longitudBuffer ; se coloca la cantidad de bytes a escribir en el archivo
+	call WriteToFile ; esta funcion requiere eax, edx y ecx para funcionar, escribe los contenidos de edx en el archivo ubicado en eax
+	
+	mov eax, identificadorArchivo ; se lee nuevamente el identificador del archivo
+	call CloseFile ; se cierra la escritura al archivo
+
+	; ciclar lectura del archivo hasta recibir cambios
+	call esperarCambioArchivo
+	; al recibir cambios, procesar el archivo para obtener el movimiento
+	call leerMovidaArchivo
+	; con los datos recibidos, se procesa el movimiento para reflejarse localmente
+	call procesarMovimientoNube
+	call clrscr
+	call printTablero
+	; se cambia de turno para recibir el movimiento de negras
+	call cambioTurno
+
+	ret
+recibirPartidaCreada ENDP
+
+leerArchivoJuego PROC
+    ; Abrir el archivo para lectura
+    lea edx, nombreArchivo            ; Cargar la dirección del nombre del archivo
+    call openInputFile                ; Función de Irvine32 para abrir un archivo
+    mov identificadorArchivo, eax     ; Almacenar el "file handle" en 'identificadorArchivo'
+
+    ; Leer datos del archivo en el buffer
+    mov eax, identificadorArchivo     ; Mover el identificador a eax
+    lea edx, contenidoArchivo        ; Cargar la dirección del buffer para almacenar los datos del archivo
+    mov ecx, longitudBuffer      ; Cargar el número de bytes a leer en ecx
+    call ReadFromFile        ; Función de Irvine32 para leer desde el archivo
+
+    ; Cerrar el archivo
+    mov eax, identificadorArchivo     ; Mover el identificador a eax
+    call CloseFile                    ; Cerrar el archivo
+
+	ret
+leerArchivoJuego ENDP
+
+comunicarCambioArchivo PROC
+	; Comunica al script de servicio el movimiento que acaba de realizar
+
+	lea edx, nombreArchivo
+	call createOutputFile ; Procedimiento de irvine para crear o sobrescribir un archivo
+	mov identificadorArchivo, eax ; La funcion anterior produce en eax un "file handle" que se almacena en esta variable identificador
+
+	; Colocamos en EDI la ubicacion del contenido del archivo, para agregarle los datos necesarios
+	lea edi, contenidoArchivo
+	mov eax, colorJugador
+	add al, 30h
+	mov [edi], al ; Colocar el color del jugador que hizo la movida
+	inc edi ; se mueve el puntero
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+	inc edi 
+
+	lea esi, usrCurrent
+	call colocarStringRegistro ; coloca los contenidos de string de ESI en donde se encuentre EDI
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+	inc edi 
+	lea esi, usrOpponent
+	call colocarStringRegistro
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+	inc edi
+
+	lea esi, PiezaX
+	mov al, [esi]
+	add al, 41h
+	mov [edi], al ; se coloca la X
+	inc edi
+	lea esi, PiezaY
+	mov al, [esi]
+	add al, 31h
+	mov [edi], al ; se coloca la Y
+	inc edi 
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+	inc edi
+
+	lea esi, MovidaX
+	mov al, [esi]
+	add al, 41h
+	mov [edi], al ; se coloca la X
+	inc edi
+	lea esi, MovidaY
+	mov al, [esi]
+	add al, 31h
+	mov [edi], al ; se coloca la Y
+	inc edi
+	mov al, 20h
+	mov [edi], al ; se coloca un espacio
+
+	mov eax, identificadorArchivo ; se lee nuevamente el identificador del archivo
+	lea edx, contenidoArchivo ; se coloca la totalidad del contenido necesario para el archivo en una sola escritura
+	mov ecx, longitudBuffer ; se coloca la cantidad de bytes a escribir en el archivo
+	call WriteToFile ; esta funcion requiere eax, edx y ecx para funcionar, escribe los contenidos de edx en el archivo ubicado en eax
+	
+	mov eax, identificadorArchivo ; se lee nuevamente el identificador del archivo
+	call CloseFile ; se cierra la escritura al archivo
+	ret
+comunicarCambioArchivo ENDP
 
 simularCargaJuego PROC
 	; Recibe un archivo de juego y carga hasta el movimiento más reciente
 	ret
 simularCargaJuego ENDP
 
-comunicarCambioArchivo PROC
-	; Comunica al script de servicio el movimiento que acaba de suceder
+esperarSubidaArchivo PROC
+cicloEsperaSubida:
+		mov eax, tiempoEspera
+		call Delay
+		call leerArchivoJuego
+		lea esi, contenidoArchivo
+		mov al, 37h
+		cmp [esi], al
+		je salir
+		jmp cicloEsperaSubida
+	salir:
 	ret
-comunicarCambioArchivo ENDP
+esperarSubidaArchivo ENDP
 
-recibirCambioArchivo PROC
+esperarCambioArchivo PROC
 	; Se mantiene a la espera de un cambio en el archivo del cual se encarga el script de servicio
+	call crlf
+	call crlf
+	lea edx, EsperandoRespuesta
+	call writeString
+	cicloEsperaLectura:
+		mov eax, tiempoEspera
+		call Delay
+		call leerArchivoJuego
+		lea esi, contenidoArchivo
+		mov al, 37h
+		cmp [esi], al
+		je cicloEsperaLectura
+		mov al, 30h
+		cmp [esi], al
+		je salir
+		mov al, 31h
+		cmp [esi], al
+		je salir
+		jmp cicloEsperaLectura
+	salir:
 	ret
-recibirCambioArchivo ENDP
+esperarCambioArchivo ENDP
+
+leerMovidaArchivo PROC
+	lea esi, contenidoArchivo
+	; se guarda el color del jugador que realizo la movida
+	mov al, [esi]
+	add esi, 2
+
+	; se ignora el nombre del jugador y oponente
+	call ciclarSiguienteEspacio
+	call ciclarSiguienteEspacio
+
+	; se recibe la pieza seleccionada
+	xor eax, eax
+	mov eax, [esi]
+	sub eax, 41h
+	xor ebx, ebx
+	mov bl, al
+	mov PiezaX, ebx
+	inc esi
+	mov eax, [esi]
+	sub eax, 31h
+	xor ebx, ebx
+	mov bl, al
+	mov PiezaY, ebx
+	add esi, 2
+
+	; se recibe la casilla atacada
+	xor eax, eax
+	mov eax, [esi]
+	sub eax, 41h
+	xor ebx, ebx
+	mov bl, al
+	mov MovidaX, ebx
+	inc esi
+	mov eax, [esi]
+	sub eax, 31h
+	xor ebx, ebx
+	mov bl, al
+	mov MovidaY, ebx
+	
+	ret
+leerMovidaArchivo ENDP
+
+ciclarSiguienteEspacio PROC
+	continuaCiclado:
+		mov al, [esi]
+		cmp al, 20h
+		je salir
+		inc esi
+		jmp continuaCiclado
+	salir:
+		inc esi
+		ret
+ciclarSiguienteEspacio ENDP
 
 leerUsuarioJugando PROC
 	call limpiarRegistros
-	mov si, 0
 	cicloIngresoUsuario:
 		call clrscr
-		lea eax, DigitarUsuario
-		call WriteString
+		lea edx, DigitarUsuario
+		call WriteString ; se escribe el mensaje para informar que debe digitar el usuario
+		xor edx, edx
 		xor eax, eax
-		call readChar
-		cmp al, 13 ; comparar si es enter
-		je inicioPassword 
-		lea usrCurrent[si], al
-		inc si
-		jmp cicloIngresoPassword
-	inicioPassword:
-		mov si, 0
-		jmp cicloIngresoPassword
+		mReadString usrCurrent
+		cmp usrCurrent, 0
+		je cicloIngresoUsuario ; en caso de no introducir nada, reiniciar la lectura de string
+		jmp cicloIngresoPassword ; de lo contrario se continua a la clave
 	cicloIngresoPassword:
 		call clrscr
-		lea eax, DigitarContra
+		lea edx, DigitarContra
 		call WriteString
+		xor edx, edx
 		xor eax, eax
-		call readChar
-		cmp al, 13 ; comparar si es enter
-		je inicioOpp 
-		lea usrPassword[si], al
-		inc si
-		jmp cicloIngresoPassword
-	inicioOpp:
-		mov si, 0
+		mReadString usrPassword
+		cmp usrPassword, 0
+		je cicloIngresoPassword 
 		jmp cicloIngresoOpp
 	cicloIngresoOpp:
 		call clrscr
-		lea eax, DigitarOpp
+		lea edx, DigitarOpp
 		call WriteString
+		xor edx, edx
 		xor eax, eax
-		call readChar
-		cmp al, 13 ; comparar si es enter
-		je colorJugador
-		lea usrOponent[si], al
-		inc si
-		jmp cicloIngresoOpp
-	colorJugador:
+		mReadString usrOpponent
+		cmp usrOpponent, 0
+		je cicloIngresoOpp
+		jmp escogerColorJugador
+	escogerColorJugador:
 		call clrscr
-		lea eax, EscogerColor
+		lea edx, EscogerColor
 		call WriteString
 		xor eax, eax
 		call readChar
+		call writeChar
 		cmp al, 31h
-		je empiezaNegras
-		cmp al 30h
-		je empiezaBlancas
-		jmp colorJugador
-	empiezaBlancas:
+		je eligeNegras
+		cmp al, 30h
+		mov al, 20h
+		call writeChar
+		je eligeBlancas
+		jmp escogerColorJugador
+	eligeBlancas:
 		mov colorJugador, 0
-		jmp tipoJuego
-	empiezaNegras:
+		mov colorOponente,1
+		jmp tipoInicio
+	eligeNegras:
 		mov colorJugador, 1
-		jmp tipoJuego
+		mov colorOponente,0
+		jmp tipoInicio
 	tipoInicio:
 		call clrscr
-		lea eax, TipoJuego
+		lea edx, TipoJuego
 		call WriteString
 		xor eax, eax
 		call readChar
+		call writeChar
 		cmp al, 30h
 		je nuevaPartida
-		cmp al 31h
+		cmp al, 31h
+		mov al, 20h
+		call writeChar
 		je cargarPartida
 		jmp tipoInicio
 	nuevaPartida:
-		; procesamiento de nuevo archivo // Jug 1 crea y sube archivo, Jug 2 recibe de nube 
+		cmp colorOponente, 0
+		je casoNegras
+		jne casoBlancas
+		casoBlancas:
+			call crearArchivoJuego
+			; se cambia de turno porque se acaba de jugar al crear el archivo
+			call cambioTurno
+			; ciclar lectura del archivo hasta recibir cambios
+			call esperarSubidaArchivo
+			call esperarCambioArchivo
+			; al recibir cambios, procesar el archivo para obtener el movimiento
+			call leerMovidaArchivo
+			; con los datos recibidos, se procesa el movimiento para reflejarse localmente
+			call procesarMovimientoNube
+			call clrscr
+			call printTablero
+			; se cambia de turno para recibir turno blancas
+			call cambioTurno
+			jmp salir ; se sale para iniciar el ciclo de juego regular
+		casoNegras:
+			call crlf
+			call recibirPartidaCreada
+			jmp salir
 	cargarPartida:
 		; procesamiento preparativo de leer partida
 	salir:
@@ -815,73 +1199,180 @@ obtenerCasillaAtacada PROC
 obtenerCasillaAtacada ENDP
 
 printTablero PROC
-	; Imprime las letras de las coordenadas
-	call limpiarRegistros
-	mov al, 5Ch
-	call writechar
-	mov al, 20h
-	call writechar
-	mov al, 41h
-	call writechar
-	mov al, 20h
-	call writechar
-	mov al, 42h
-	call writechar
-	mov al, 20h
-	call writechar
-	mov al, 43h
-	call writechar
-	mov al, 20h
-	call writechar
-	mov al, 44h
-	call writechar
-	mov al, 20h
-	call writechar
-	mov al, 45h
-	call writechar
-	mov al, 20h
-	call writechar
-	mov al, 46h
-	call writechar
-	mov al, 20h
-	call writechar
-	mov al, 47h
-	call writechar
-	mov al, 20h
-	call writechar
-	mov al, 48h
-	call writechar
-	call crlf ; salto de l�nea
-	mov al, 31h
-	call writechar
-	mov al, 20h
-	call writechar
-	mov esi, offset Tablero
-	mov cl, 0
-	mov dx, 71
-	cicloImprimir:
-		mov al, [esi]
-		cmp al, 0h
-		je siguienteLinea
+	cmp tipoTablero, 0
+	je tradicional
+	jne comprimido
+	tradicional:
+		; Imprime las letras de las coordenadas y los espacios entre ellos
+		call limpiarRegistros
+		mov al, 5Ch
 		call writechar
 		mov al, 20h
 		call writechar
-		inc esi
-		sub dx, 1
-		cmp dx, 0
-		je salir
-		jmp cicloImprimir
-	siguienteLinea:
-		call crlf ; salto de l�nea
-		inc esi
-		sub dx, 1
-		add cl, 1
+		call writechar
+		call writechar
+		mov al, 41h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		call writechar
+		mov al, 42h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		call writechar
+		mov al, 43h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		call writechar
+		mov al, 44h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		call writechar
+		mov al, 45h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		call writechar
+		mov al, 46h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		call writechar
+		mov al, 47h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		call writechar
+		mov al, 48h
+		call writechar
+		call crlf ; salto de linea
+		call crlf ; salto de linea
 		mov al, 31h
-		add al, cl
-		call writechar ; Imprime los numeros de las coordenadas
-		mov al, 20h 
-		call writechar 
-		jmp cicloImprimir
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		call writechar
+		mov esi, offset Tablero
+		mov cl, 0
+		mov dx, 71
+		cicloImprimirTrad:
+			mov al, [esi]
+			cmp al, 0h
+			je siguienteLineaTrad
+			call writechar
+			mov al, 20h
+			call writechar
+			call writechar
+			call writechar
+			inc esi
+			sub dx, 1
+			cmp dx, 0
+			je salir
+			jmp cicloImprimirTrad
+		siguienteLineaTrad:
+			call crlf ; salto de l�nea
+			call crlf
+			inc esi
+			sub dx, 1
+			add cl, 1
+			mov al, 31h
+			add al, cl
+			call writechar ; Imprime los numeros de las coordenadas
+			mov al, 20h 
+			call writechar
+			call writechar
+			call writechar 
+			jmp cicloImprimirTrad
+	comprimido:
+		; Imprime las letras de las coordenadas con menos espacios entre ellos
+		call limpiarRegistros
+		mov al, 5Ch
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		mov al, 41h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		mov al, 42h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		mov al, 43h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		mov al, 44h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		mov al, 45h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		mov al, 46h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		mov al, 47h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		mov al, 48h
+		call writechar
+		call crlf ; salto de linea
+		mov al, 31h
+		call writechar
+		mov al, 20h
+		call writechar
+		call writechar
+		mov esi, offset Tablero
+		mov cl, 0
+		mov dx, 71
+		cicloImprimirComp:
+			mov al, [esi]
+			cmp al, 0h
+			je siguienteLineaComp
+			call writechar
+			mov al, 20h
+			call writechar
+			call writechar
+			inc esi
+			sub dx, 1
+			cmp dx, 0
+			je salir
+			jmp cicloImprimirComp
+		siguienteLineaComp:
+			call crlf ; salto de l�nea
+			inc esi
+			sub dx, 1
+			add cl, 1
+			mov al, 31h
+			add al, cl
+			call writechar ; Imprime los numeros de las coordenadas
+			mov al, 20h 
+			call writechar
+			call writechar 
+			jmp cicloImprimirComp
 	salir:
 		ret
 printTablero ENDP
@@ -916,219 +1407,505 @@ realizarMovimiento PROC
 	mov [esi], al
 	ret
 realizarMovimiento ENDP
+
+procesarMovimientoNube PROC
+	call crlf ; Salto de linea
+	call crlf ; Salto de linea
+	cmp ColorJugador, 1
+	je validarNegra
+	jne validarBlanca
+	validarBlanca:
+		call limpiarRegistros
+		call obtenerTipoPieza
+		mov PiezaMovida, al
+		pawnBlanca:
+			cmp PiezaMovida, 3Ch  ; | Pawn
+			jne towerBlanca
+			call limpiarRegistros
+			lea edx, PBSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoPawnBlanca
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		towerBlanca:
+			cmp PiezaMovida, 5Bh ; | Tower
+			jne bishopBlanca
+			call limpiarRegistros
+			lea edx, TBSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoTower
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		bishopBlanca:
+			cmp PiezaMovida, 28h ; | Bishop
+			jne kingBlanca
+			call limpiarRegistros
+			lea edx, ABSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoBishop
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		kingBlanca:
+			cmp PiezaMovida, 2Bh  ; | King
+			jne queenBlanca
+			call limpiarRegistros
+			lea edx, KBSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoKing
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		queenBlanca:
+			cmp PiezaMovida, 26h ; | Queen
+			jne knightBlanca
+			call limpiarRegistros
+			lea edx, RBSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoQueen
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		knightBlanca:
+			cmp PiezaMovida, 7Bh ; | Knight 
+			jne piezaInvalida
+			call limpiarRegistros
+			lea edx, CBSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoKnight
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+	validarNegra:
+		call limpiarRegistros
+		call obtenerTipoPieza
+		mov PiezaMovida, al
+		pawnNegra:
+			cmp PiezaMovida, 3Eh ; | Pawn
+			jne towerNegra
+			call limpiarRegistros
+			lea edx, PNSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoPawnNegra
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		towerNegra:
+			cmp PiezaMovida, 5Dh ; | Tower
+			jne bishopNegra
+			call limpiarRegistros
+			lea edx, TNSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoTower
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		bishopNegra:
+			cmp PiezaMovida, 29h ; | Bishop
+			jne kingNegra
+			call limpiarRegistros
+			lea edx, ANSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoBishop
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		kingNegra:
+			cmp PiezaMovida, 2Ah ; | King
+			jne queenNegra
+			call limpiarRegistros
+			lea edx, KNSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoKing
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		queenNegra:
+			cmp PiezaMovida, 24h ; | Queen
+			jne knightNegra
+			call limpiarRegistros
+			lea edx, RNSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoQueen
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		knightNegra:
+			cmp PiezaMovida, 7Dh ; | Knight 
+			jne piezaInvalida
+			call limpiarRegistros
+			lea edx, CNSeleccionado
+			call WriteString
+			call CRLF
+			call obtenerDiferenciaIndices
+			call validarMovimientoKnight
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+	piezaInvalida:
+		mov PiezaExisteEnTablero, 0
+		mov MovidaExisteEnTablero, 0
+		;desplegar mensaje
+		lea edx, NULLSELECCIONADO
+		call WriteString
+		call readChar
+		jmp salir
+	movimientoInvalido:
+		mov PiezaExisteEnTablero, 0
+		mov MovidaExisteEnTablero, 0
+		;desplegar mensaje
+		lea edx, NULLMOVIDO
+		call WriteString
+		call readChar
+		jmp salir
+	salir:
+		ret
+procesarMovimientoNube ENDP
+
+obtenerTipoTablero PROC
+	inicioCiclo:
+		call clrscr
+		lea edx, menuMessage
+		call writeString
+		call limpiarRegistros
+		call readChar
+		call writeChar
+		dec al
+		cmp al, 30h
+		je valido
+		cmp al, 31h
+		je valido
+		jmp inicioCiclo
+	valido:
+		sub al, 30h
+		mov tipoTablero, al
+	salir:
+		ret
+
+obtenerTipoTablero ENDP
+
+procedimientoMovimiento PROC
+	call crlf ; Salto de linea
+	call crlf ; Salto de linea
+	cmp ColorJugador, 1
+	je validarNegra
+	jne validarBlanca
+	validarBlanca:
+		call limpiarRegistros
+		call obtenerTipoPieza
+		mov PiezaMovida, al
+		pawnBlanca:
+			cmp PiezaMovida, 3Ch  ; | Pawn
+			jne towerBlanca
+			call limpiarRegistros
+			lea edx, PBSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoPawnBlanca
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		towerBlanca:
+			cmp PiezaMovida, 5Bh ; | Tower
+			jne bishopBlanca
+			call limpiarRegistros
+			lea edx, TBSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoTower
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		bishopBlanca:
+			cmp PiezaMovida, 28h ; | Bishop
+			jne kingBlanca
+			call limpiarRegistros
+			lea edx, ABSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoBishop
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		kingBlanca:
+			cmp PiezaMovida, 2Bh  ; | King
+			jne queenBlanca
+			call limpiarRegistros
+			lea edx, KBSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoKing
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		queenBlanca:
+			cmp PiezaMovida, 26h ; | Queen
+			jne knightBlanca
+			call limpiarRegistros
+			lea edx, RBSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoQueen
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		knightBlanca:
+			cmp PiezaMovida, 7Bh ; | Knight 
+			jne piezaInvalida
+			call limpiarRegistros
+			lea edx, CBSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoKnight
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+	validarNegra:
+		call limpiarRegistros
+		call obtenerTipoPieza
+		mov PiezaMovida, al
+		pawnNegra:
+			cmp PiezaMovida, 3Eh ; | Pawn
+			jne towerNegra
+			call limpiarRegistros
+			lea edx, PNSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoPawnNegra
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		towerNegra:
+			cmp PiezaMovida, 5Dh ; | Tower
+			jne bishopNegra
+			call limpiarRegistros
+			lea edx, TNSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoTower
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		bishopNegra:
+			cmp PiezaMovida, 29h ; | Bishop
+			jne kingNegra
+			call limpiarRegistros
+			lea edx, ANSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoBishop
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		kingNegra:
+			cmp PiezaMovida, 2Ah ; | King
+			jne queenNegra
+			call limpiarRegistros
+			lea edx, KNSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoKing
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		queenNegra:
+			cmp PiezaMovida, 24h ; | Queen
+			jne knightNegra
+			call limpiarRegistros
+			lea edx, RNSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoQueen
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+		knightNegra:
+			cmp PiezaMovida, 7Dh ; | Knight 
+			jne piezaInvalida
+			call limpiarRegistros
+			lea edx, CNSeleccionado
+			call WriteString
+			call CRLF
+			call recibirMovimiento
+			call obtenerDiferenciaIndices
+			call validarMovimientoKnight
+			cmp MovidaEsPosible, 0
+			je movimientoInvalido
+			call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
+			jmp salir ; termina el turno
+	piezaInvalida:
+		mov PiezaExisteEnTablero, 0
+		mov MovidaExisteEnTablero, 0
+		;desplegar mensaje
+		lea edx, NULLSELECCIONADO
+		call WriteString
+		call readChar
+		jmp salir
+	movimientoInvalido:
+		mov PiezaExisteEnTablero, 0
+		mov MovidaExisteEnTablero, 0
+		;desplegar mensaje
+		lea edx, NULLMOVIDO
+		call WriteString
+		call readChar
+		jmp salir
+	salir:
+		ret
+procedimientoMovimiento ENDP
+
+cambioTurno PROC
+	; para el cambio de turno se debe cambiar la variable colorJugador
+	cmp colorJugador, 0
+	je cambioSiendoBlanca
+	jmp cambioSiendoNegra
+	cambioSiendoBlanca:
+		mov colorJugador, 1
+		jmp salir
+	cambioSiendoNegra:
+		mov colorJugador, 0
+	salir:
+	ret
+cambioTurno ENDP
+	
+procesarTurnoIndividual PROC
+	inicioCiclo:
+		call limpiarVariables
+		call limpiarRegistros
+		call clrscr ; limpia la pantallita
+		call printTablero
+		call recibirPieza ; recibe la pieza que se desea mover
+		cmp PiezaExisteEnTablero, 0
+		je inicioCiclo
+		call procedimientoMovimiento
+		cmp MovidaExisteEnTablero, 0
+		je inicioCiclo
+		ret
+procesarTurnoIndividual ENDP
+
+
+cicloJuego PROC ; Se encarga de procesar el movimiento
+	inicioCiclo:
+		call limpiarVariables
+		call limpiarRegistros
+		call clrscr ; limpia la pantallita
+		call printTablero
+		call recibirPieza ; recibe la pieza que se desea mover
+		cmp PiezaExisteEnTablero, 0
+		je inicioCiclo
+		call procedimientoMovimiento
+		call clrscr ; limpia la pantallita
+		call printTablero
+		cmp MovidaExisteEnTablero, 0
+		je inicioCiclo
+	compararJaqueAliado:
+		cmp jaqueMate, 1
+		je salirTurno
+	cambioTurnoUno:
+		; subir el movimiento a la nube
+		call comunicarCambioArchivo
+		; se espera a que el archivo sea comunicado y que localmente se almacene 7 para el jugador
+		call esperarSubidaArchivo
+		call cambioTurno
+	cicloEspera:
+		; el ciclo en el que permanece el jugador cuando no es su turno
+		call esperarCambioArchivo
+		; al recibir cambios, procesar el archivo para obtener el movimiento
+		call leerMovidaArchivo
+		; con los datos recibidos, se procesa el movimiento para reflejarse localmente
+		call procesarMovimientoNube
+	compararJaqueEnemigo:
+		cmp jaqueMate, 1
+		je salirTurno
+	cambioTurnoDos:
+		call cambioTurno
+		jmp inicioCiclo
+	salirTurno:
+	ret
+cicloJuego ENDP
+
 ; ============================== ;
 ; INICIO DEL CODIGO EN EJECUCION ;
 ; ============================== ;
 
 main PROC
 	; antes de iniciar el turno falta un menu para iniciar un juego y seleccionar el color del jugador en este dispositivo
-	cicloTurno:
-			call limpiarVariables
-			call limpiarRegistros
-			call clrscr ; limpia la pantallita
-			call leerUsuarioJugando
-			call printTablero
-			call recibirPieza ; recibe la pieza que se desea mover
-			cmp PiezaExisteEnTablero, 0
-			je cicloTurno
-			call crlf ; Salto de linea
-			call crlf ; Salto de linea
-			cmp ColorJugador, 1
-			je validarNegra
-			jne validarBlanca
-			validarBlanca:
-				call limpiarRegistros
-				call obtenerTipoPieza
-				mov PiezaMovida, al
-				pawnBlanca:
-					cmp PiezaMovida, 3Ch  ; | Pawn
-					jne towerBlanca
-					call limpiarRegistros
-					lea edx, PBSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoPawnBlanca
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-				towerBlanca:
-					cmp PiezaMovida, 5Bh ; | Tower
-					jne bishopBlanca
-					call limpiarRegistros
-					lea edx, TBSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoTower
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-				bishopBlanca:
-					cmp PiezaMovida, 28h ; | Bishop
-					jne kingBlanca
-					call limpiarRegistros
-					lea edx, ABSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoBishop
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-				kingBlanca:
-					cmp PiezaMovida, 2Bh  ; | King
-					jne queenBlanca
-					call limpiarRegistros
-					lea edx, KBSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoKing
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-				queenBlanca:
-					cmp PiezaMovida, 26h ; | Queen
-					jne knightBlanca
-					call limpiarRegistros
-					lea edx, RBSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoQueen
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-				knightBlanca:
-					cmp PiezaMovida, 7Bh ; | Knight 
-					jne piezaInvalida
-					call limpiarRegistros
-					lea edx, CBSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoKnight
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-			validarNegra:
-				call limpiarRegistros
-				call obtenerTipoPieza
-				mov PiezaMovida, al
-				pawnNegra:
-					cmp PiezaMovida, 3Eh ; | Pawn
-					jne towerNegra
-					call limpiarRegistros
-					lea edx, PNSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoPawnNegra
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-				towerNegra:
-					cmp PiezaMovida, 5Dh ; | Tower
-					jne bishopNegra
-					call limpiarRegistros
-					lea edx, TNSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoTower
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-				bishopNegra:
-					cmp PiezaMovida, 29h ; | Bishop
-					jne kingNegra
-					call limpiarRegistros
-					lea edx, ANSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoBishop
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-				kingNegra:
-					cmp PiezaMovida, 2Ah ; | King
-					jne queenNegra
-					call limpiarRegistros
-					lea edx, KNSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoKing
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-				queenNegra:
-					cmp PiezaMovida, 24h ; | Queen
-					jne knightNegra
-					call limpiarRegistros
-					lea edx, RNSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoQueen
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-				knightNegra:
-					cmp PiezaMovida, 7Dh ; | Knight 
-					jne piezaInvalida
-					call limpiarRegistros
-					lea edx, CNSeleccionado
-					call WriteString
-					call CRLF
-					call recibirMovimiento
-					call obtenerDiferenciaIndices
-					call validarMovimientoKnight
-					cmp MovidaEsPosible, 0
-					je salirTurno
-					call RealizarMovimiento ; Todas las funciones anteriores se corren para decidir si se ejecuta este proceso
-					jmp salirTurno ; termina el turno
-			piezaInvalida:
-				mov PiezaExisteEnTablero, 0
-				mov MovidaExisteEnTablero, 0
-				;desplegar mensaje
-				call readChar
-				jmp cicloTurno
-			movimientoInvalido:
-				mov PiezaExisteEnTablero, 0
-				mov MovidaExisteEnTablero, 0
-				;desplegar mensaje
-				call readChar
-				jmp cicloTurno
-			salirTurno:
-				mov PiezaExisteEnTablero, 0
-				mov MovidaExisteEnTablero, 0
-				jmp cicloTurno
-				;desplegar mensaje 
+	preparativoPartida:
+		call obtenerTipoTablero
+		call limpiarVariables
+		call limpiarRegistros
+		call clrscr ; limpia la pantallita
+		call leerUsuarioJugando ; define usuarios, tipo de partida, color del jugador local y potencial de cargar partida
+		call cicloJuego
+		; desplegar mensajes para cuando el jugador gana o pierde
 	salir:
 
 exit
